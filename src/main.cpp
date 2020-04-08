@@ -124,15 +124,10 @@ void loop() {
 
 		if (ntp.getEpochTime() % 2 == 0) {
 			const uint16_t color = matrix.Color(0x7f, 0x7f, 0x7f);
-			matrix.drawPixel(11, 1, color);
-			matrix.drawPixel(11, 2, color);
-			matrix.drawPixel(12, 1, color);
+			matrix.drawPixel(11, 3, color);
 			matrix.drawPixel(12, 2, color);
-			
 			matrix.drawPixel(11, 5, color);
-			matrix.drawPixel(11, 6, color);
-			matrix.drawPixel(12, 5, color);
-			matrix.drawPixel(12, 6, color);
+			matrix.drawPixel(12, 4, color);
 		}
 
 		matrix.setTextColor(matrix.Color(0xFF, 0xFF, 0xFF));
