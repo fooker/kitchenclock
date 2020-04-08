@@ -75,8 +75,8 @@ void setup() {
 static const char NUMS[] = "0123456789";
 
 uint16_t calc_hue(const uint8_t h, const uint8_t m, const uint8_t s) {
-	uint32_t x = (h * 60 + m) * 60 + s;
-	return x * (255*255) / (24*60*60);
+	uint64_t x = (h * 60 + m) * 60 + s;
+	return (x * (0xFFFF)) / (24 * 60 * 60);
 }
 
 struct {
