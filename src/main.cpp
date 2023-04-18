@@ -8,8 +8,10 @@
 
 #include <WiFiUdp.h>
 #include <NTPClient.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include <Timezone.h>
+
+#include <RingBuf.h>
 
 #include "../settings.h"
 
@@ -58,6 +60,11 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(24, 8, PIN,
 
 WiFiUDP udp;
 NTPClient ntp(udp, "de.pool.ntp.org", 0, 60*1000);
+
+#define LDR_SIZE 128
+uint16_t ldr[LDR_SIZE];    // LDR values
+uint8_t  ldr_i = 0;        // LDR write index
+uint32_t ldr_t = millis(); // LDR update time
 
 void setup() {
 	Serial.begin(115200);
@@ -145,5 +152,23 @@ void loop() {
 
 	matrix.show();
 	delay(50);
+
+	unsigned long now = millis();
+	if (now - ldr_t >= 100) {
+		uint16_t a = analogRead(A0);
+
+		ldr[ldr_i] = a;
+		ldr_i = (ldr_i + 1) % LDR_SIZE;
+		
+		uint16_t sum = 0;
+		for (uint8_t i = 0; i < LDR_SIZE; i++) {
+			sum += ldr[i];
+		}
+
+		uint16_t v = map(sum / LDR_SIZE, 80, 800, 32, 255);
+		matrix.setBrightness(v);
+
+		ldr_t = now;
+	}
 }
 
