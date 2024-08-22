@@ -6,10 +6,9 @@
 
 #include <ESP8266WiFi.h>
 
-#include <WiFiUdp.h>
-#include <NTPClient.h>
+#include <TZ.h>
 #include <TimeLib.h>
-#include <Timezone.h>
+
 
 #include <RingBuf.h>
 
@@ -58,8 +57,7 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(24, 8, PIN,
 	NEO_GRB +
 	NEO_KHZ800);
 
-WiFiUDP udp;
-NTPClient ntp(udp, "de.pool.ntp.org", 0, 60*1000);
+#define MYTZ TZ_Europe_Berlin
 
 #define LDR_SIZE 128
 uint16_t ldr[LDR_SIZE];    // LDR values
@@ -70,13 +68,13 @@ void setup() {
 	Serial.begin(115200);
 	Serial.println();
 
+	configTime(MYTZ, "pool.ntp.org");
+
 	matrix.begin();
 	matrix.setTextWrap(false);
 	matrix.setBrightness(255);
 
 	WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-	ntp.begin(false);
 }
 
 static const char NUMS[] = "0123456789";
@@ -95,13 +93,8 @@ struct {
 void loop() {
 	matrix.clear();
 
-	ntp.update();
-
-	static TimeChangeRule dst = {"CEST", Last, Sun, Mar, 2, 120};
-	static TimeChangeRule std = {"CET",  Last, Sun, Oct, 3,  60};
-	static Timezone tz(dst, std);
-
-	time_t local = tz.toLocal(ntp.getEpochTime());
+	time_t utc = time(nullptr);
+	tm* local = localtime(&utc);
 
 	if (WiFi.status() != WL_CONNECTED) {
 		matrix.setFont(&TomThumb);
@@ -110,9 +103,9 @@ void loop() {
 		matrix.print("WiFi...");
 
 	} else {
-		const int8_t h = hour(local);
-		const int8_t m = minute(local);
-		const int8_t s = second(local);
+		const int8_t h = local->tm_hour;
+		const int8_t m = local->tm_min;
+		const int8_t s = local->tm_sec;
 
 		for (uint8_t i = 0; i < 32; i++) {
 			if (drops[i].v > 0) {
@@ -129,7 +122,7 @@ void loop() {
 
 		matrix.setFont(&Clock4x6);
 
-		if (ntp.getEpochTime() % 2 == 0) {
+		if (s % 2 == 0) {
 			const uint16_t color = matrix.Color(0x7f, 0x7f, 0x7f);
 			matrix.drawPixel(11, 3, color);
 			matrix.drawPixel(12, 2, color);
